@@ -118,7 +118,7 @@ append_data <- function(dbase, trg_table, data, append=T, safer=T,
 split_lamijc <- function(wound){
   wnd_regex <- "^0$|^([A|B][1-4])+$|^([A|B][1-4][1-5][0-9])+$"
   if (!grepl(wnd_regex, wound)){
-    msg <- spintf("'%s' is not a valid lamijc.", wound)
+    msg <- sprintf("'%s' is not a valid lamijc.", wound)
     stop(msg)
   }
 
