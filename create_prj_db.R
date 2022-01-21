@@ -12,17 +12,18 @@ source("./data_mapper_utils.R")
 
 # Select the project code and process type (enter both as strings)
 # Refer to the data dictionary for a list of process types and their definitions
-#prj_cd <- 'LHA_IA18_306'
-prj_cd <- 'LHA_IA20_005'
+prj_cd <- 'LHA_IA20_813'
+#prj_cd <- 'LHA_IA20_005'
 process_type <- "2"
 overwrite <- TRUE
-# source database
-#src_dbase <- "./NearshoreMapper.accdb"
 
-src_dbase <-"C:/Users/COTTRILLAD/1work/Python/djcode/apps/fn_portal/utils/data_upload_src/OffshoreMapper.accdb"
+# source database
+src_dbase <- "../../data_modernization/fn_portal_data_in/NearshoreMapper.accdb"
+
+#src_dbase <-"C:/Users/COTTRILLAD/1work/Python/djcode/apps/fn_portal/utils/data_upload_src/OffshoreMapper.accdb"
 
 # template database:
-template_db <- "./templates/Great_Lakes_Template2_template.accdb"
+template_db <- "../../data_modernization/fn_portal_data_in/templates/Great_Lakes_Template2_template.accdb"
 
 trg_db <- file.path(dirname(src_dbase),'build', paste0(prj_cd, '.accdb'))
 
@@ -48,16 +49,13 @@ fn028 <- fetch_data('FN028', prj_cd, src_dbase)
 # the times are correct and only the times get read into Access
 head(fn028)
 #increment mode here:
-fn028$MODE <- paste0(0, seq(1, nrow(fn028)))
+fn028$MODE <- paste0(seq(1, nrow(fn028)), 0)
 append_data(trg_db, 'FN028', fn028)
 
 
 # Get list of gear/effort/process types from the glfishr package (requires VPN connection)
 gear_effort_process_types <- get_gear_process_types()
 gear_effort_process_types <- subset(gear_effort_process_types, GR %in% fn028$GR & PROCESS_TYPE==process_type)
-## %>%
-##   filter(GR %in% fn028$GR,
-##     PROCESS_TYPE == process_type)
 
 
 append_data(trg_db, 'Gear_Effort_Process_Types', gear_effort_process_types)
