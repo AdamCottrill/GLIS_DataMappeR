@@ -8,6 +8,8 @@ get_trg_table_names <- function(trg_db, table){
   return(toupper(names(dat)))
 }
 
+# checks column names for differences between the source and target and lists the missing/extra column(s) in 
+# the console
 check_table_names <- function(trg_db, table, src_data){
   trg_names <- get_trg_table_names(trg_db, table)
   missing <- setdiff(trg_names, names(src_data))
@@ -26,8 +28,7 @@ check_table_names <- function(trg_db, table, src_data){
 }
 
 
-
-
+# fetches data from Access based on the query name
 fetch_data <- function(table, prj_cd, src_db, toupper=T){
   DBConnection <- odbcConnectAccess2007(src_db,uid = "", pwd = "")
   stmt <- sprintf("EXEC get_%s @prj_cd='%s'", table, prj_cd)
@@ -40,7 +41,7 @@ fetch_data <- function(table, prj_cd, src_db, toupper=T){
 
 # function to append data to the template
 append_data <- function(dbase, trg_table, data, append=T, safer=T,
-                        toupper=T){
+                        toupper=T, verbose=F){
   if (toupper)names(data) <- toupper(names(data))
 
   field_check <- check_table_names(dbase, trg_table, data)
@@ -48,73 +49,14 @@ append_data <- function(dbase, trg_table, data, append=T, safer=T,
 
   conn <- odbcConnectAccess2007(dbase, uid = "", pwd = "")
   sqlSave(conn, data, tablename = trg_table, rownames = F,
-          safer = safer, append=append, nastring = NULL)
+          safer = safer, append = append, nastring = NULL, verbose = verbose)
   return(odbcClose(conn))
 
 }
 
 
-# Expected pattern of a valid lamprey wound
-#wnd_regex <- "^0$|^([A|B][1-4])+$|^([A|B][1-4][1-5][0-9])+$"
 
-## update_lamijc <- function(df){
-##   # Helper function to add additional lamprey wounds recorded in comments to the LAMIJC column and
-##   # remove the wound code from the comment column
-##   df %>%
-##     mutate(LAMIJC = ifelse(grepl(wnd_regex, COMMENT_LAM), paste0(LAMIJC, COMMENT_LAM), LAMIJC),
-##            COMMENT_LAM = ifelse(grepl(wnd_regex, COMMENT_LAM), NA, COMMENT_LAM))
-## }
-
-## list_lamijc <- function(wound){
-##   # Helper function to check if lamprey wounds have a valid code and then create a list of
-##   # individual wounds for fish with multiple lamprey wounds
-
-##   if (!grepl(wnd_regex, wound)){
-##     msg <- sprintf("'%s' is not a valid lamijc.", wound)
-##     stop(msg)
-##   }
-
-##   a123_regex <- "^([A|B][1-4][1-5][0-9])+$"
-##   if (grepl(a123_regex, wound)){
-##     #wound with diameter
-##     wounds <- strsplit(wound, "(?<=.{4})", perl = TRUE)[[1]]
-##   } else {
-##     wounds <- strsplit(wound, "(?<=.{2})", perl = TRUE)[[1]]
-##   }
-
-##   #create a list of individual wounds:
-##   wounds <- t(sapply(wounds, function(x) c(substr(x,1,4))))
-##   return(wounds)
-## }
-
-## split_lamijc <- function(df){
-##   # Function to split lamprey wound codes into two columns (LAMIJC_TYPE and LAMIJC_SIZE),
-##   # add rows for each lamprey wound, and remove unnecessary columns
-##   df %>%
-
-##     update_lamijc() %>%
-
-##     # create tibble from wound list-column:
-##     tibble(wound = sapply(LAMIJC, FUN = list_lamijc, simplify = FALSE)) %>%
-
-##     # add a column for each wound:
-##     unnest_wider(wound, "") %>%
-
-##     # pivot wide dataframe to long so each wound has its own row:
-##     pivot_longer(cols = starts_with("wound"), values_to = "wound", values_drop_na = TRUE) %>%
-
-##     # break wound code into type and size:
-##     mutate(LAMIJC_TYPE = ifelse(wound == 0, 0, substr(wound, 1, 2)),
-##            LAMIJC_SIZE = as.numeric(ifelse(nchar(wound) == 4, substr(wound, 3, 4), NA))) %>%
-
-##     # drop unnecessary columns:
-##     select(-name, -wound, -LAMIJC) %>%
-
-##     as.data.frame()
-## }
-
-
-
+# helper function to split lamprey wound strings into individual wounds and the wound and diameter components
 split_lamijc <- function(wound){
   wnd_regex <- "^0$|^([A|B][1-4])+$|^([A|B][1-4][1-5][0-9])+$"
   if (!grepl(wnd_regex, wound)){
@@ -142,7 +84,7 @@ split_lamijc <- function(wound){
 
 
 
-
+# adds one row per wound to the lamprey wound table
 process_fn125_lamprey <- function(df) {
   tmp <- df[FALSE, ]
   tmp$LAMICJ_TYPE <- character()
@@ -172,7 +114,7 @@ process_fn125_lamprey <- function(df) {
   return(tmp)
 }
 
-
+# sets FN122.WATERHAUL values to TRUE or 0 based on values in the FN123 table
 update_FN122_waterhaul <- function(dbase){
   sql <- "UPDATE FN122 LEFT JOIN FN123
 ON (FN122.EFF = FN123.EFF)
@@ -186,7 +128,8 @@ WHERE (((FN123.PRJ_CD) Is Null));"
 
 }
 
-
+# series of functions to update stomach, age, lamprey, and tag flags in FN125 based on presence/absence of records in
+# subsequent tables
 update_FN125_stom_flag <- function(dbase){
 
   sql <- "UPDATE FN125 LEFT JOIN FN126
@@ -263,6 +206,7 @@ WHERE FN125_tags.PRJ_CD Is NOT Null;"
   return(odbcClose(conn))
 
 }
+
 
 add_mode <- function(fn121, fn028){
   # populate the correct mode for each sam:
