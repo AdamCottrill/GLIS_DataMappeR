@@ -1,5 +1,4 @@
 library(RODBC)
-#library(tidyverse)
 # install.packages("devtools")
 # library(devtools)
 # install_github("AdamCottrill/glfishr")
@@ -7,13 +6,9 @@ library(glfishr)
 
 source("./data_mapper_utils.R")
 
-# Project codes tested:
-# LHA_IA20_814, 812, 813; LHA_IS20_018, LSA_IA09_CIN
-
 # Select the project code and process type (enter both as strings)
 # Refer to the data dictionary for a list of process types and their definitions
 prj_cd <- 'LHA_IA20_813'
-#prj_cd <- 'LHA_IA20_005'
 process_type <- "2"
 overwrite <- TRUE
 
@@ -27,7 +22,7 @@ template_db <- "../../data_modernization/fn_portal_data_in/templates/Great_Lakes
 
 trg_db <- file.path(dirname(src_dbase),'build', paste0(prj_cd, '.accdb'))
 
-file.copy(template_db, trg_db,overwrite=overwrite)
+file.copy(template_db, trg_db, overwrite=overwrite)
 
 
 fn011 <- fetch_data('FN011', prj_cd, src_dbase)
@@ -35,9 +30,15 @@ head(fn011)
 append_data(trg_db, 'FN011', fn011)
 
 
+fn012 <- fetch_data('FN012', prj_cd, src_dbase)
+head(fn012)
+append_data(trg_db, 'FN011', fn012)
+
+
 fn022 <- fetch_data('FN022', prj_cd, src_dbase)
 head(fn022)
 append_data(trg_db, 'FN022', fn022)
+
 
 fn026 <- fetch_data('FN026', prj_cd, src_dbase)
 head(fn026)
@@ -83,17 +84,17 @@ append_data(trg_db, 'FN123', fn123)
 update_FN122_waterhaul(trg_db)
 
 
-
 fn125 <- fetch_data('FN125', prj_cd, src_dbase)
 head(fn125)
 append_data(trg_db, 'FN125', fn125)
 
 
 fn125_tags <- fetch_data("FN125_tags", prj_cd, src_dbase)
-#we mmight need to increment FISH_TAGID here
+#we might need to increment FISH_TAGID here
 head(fn125_tags)
 append_data(trg_db, 'FN125_tags', fn125_tags)
 update_FN125_tag_flag(trg_db)
+
 
 fn125_lamprey <- fetch_data('FN125_lamprey', prj_cd, src_dbase)
 fn125_lamprey <- process_fn125_lamprey(fn125_lamprey)
