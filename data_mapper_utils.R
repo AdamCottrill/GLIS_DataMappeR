@@ -39,6 +39,20 @@ fetch_data <- function(table, prj_cd, src_db, toupper=T){
   return(dat)
 }
 
+
+get_time <- function(datetime){
+  # extract time from date/time string
+  time_regex <- ".*([0-2][0-9]:[0-5][0-9]:[0-5][0-9])$"
+  datetime <- gsub(time_regex, "\\1", datetime, perl = TRUE)
+  msg <- "One or more values is not a valid time or datetime. The time component should be in the format HH:MM:SS."
+  
+  ifelse(!grepl(time_regex, datetime),
+         stop(msg),
+         datetime)
+  
+}
+
+
 # function to append data to the template
 append_data <- function(dbase, trg_table, data, append=T, safer=T,
                         toupper=T, verbose=F){
