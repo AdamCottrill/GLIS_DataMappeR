@@ -6,10 +6,12 @@ library(glfishr)
 
 source("./data_mapper_utils.R")
 
-# Select the project code and process type (enter both as strings)
+# Select the project code, process type, protocol, and lake (enter all as strings)
 # Refer to the data dictionary for a list of process types and their definitions
-prj_cd <- 'LHA_IA20_813'
+prj_cd <- 'LHA_IA14_801'
 process_type <- "2"
+protocol <- "BSM"
+lake <- "HU"
 overwrite <- TRUE
 
 # source database
@@ -34,6 +36,11 @@ append_data(trg_db, 'FN011', fn011)
 
 fn012 <- fetch_data('FN012', prj_cd, src_dbase)
 head(fn012)
+names(fn012) <- toupper(names(fn012))
+fn012_default <- get_FN012_protocol(list(lake = lake))
+fn012_default <- unique(subset(fn012_default, select = c(-BIOSAM, -PROTOCOL)))
+fn012 <- merge(fn012, fn012_default, by = c("SPC", "GRP"), all.x = TRUE)
+fn012 <- subset(fn012, select= c(-LAKE))
 append_data(trg_db, 'FN012', fn012)
 
 
