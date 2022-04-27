@@ -46,7 +46,7 @@ get_time <- function(datetime){
   datetime <- gsub(time_regex, "\\1", datetime, perl = TRUE)
   msg <- "One or more values is not a valid time or datetime. The time component should be in the format HH:MM:SS."
   
-  ifelse(!grepl(time_regex, datetime),
+  ifelse(!is.na(datetime) & !grepl(time_regex, datetime),
          stop(msg),
          datetime)
   
@@ -99,7 +99,7 @@ split_lamijc <- function(wound){
 
 
 # adds one row per wound to the lamprey wound table
-process_fn125_lamprey <- function(df) {
+process_fn125_lamprey_lamijc <- function(df) {
   tmp <- df[FALSE, ]
   tmp$LAMICJ_TYPE <- character()
   tmp$LAMICJ_SIZE <- character()
@@ -126,6 +126,28 @@ process_fn125_lamprey <- function(df) {
 
   tmp$LAMIJC <- NULL
   return(tmp)
+}
+
+# Checks for null values in LAMIJC and if all values are null (i.e. XLAM was used), returns empty columns for
+# LAMIJC_TYPE and LAMIJC_SIZE
+process_fn125_lamprey <- function(df){
+  
+  sub_df <- subset(df, select = "LAMIJC")
+  
+  w <- sapply(sub_df, function(sub_df)all(is.na(sub_df)))
+  if (any(w)) {
+    df$LAMIJC_TYPE <- NA
+    df$LAMIJC_SIZE <- NA
+    df <- subset(df, select = -c(LAMIJC))
+    
+    return(df)
+  }
+  
+  else {
+    process_fn125_lamprey_lamijc(df)
+  }
+  
+  
 }
 
 # sets FN122.WATERHAUL values to TRUE or 0 based on values in the FN123 table
@@ -202,6 +224,7 @@ WHERE FN125_Lamprey.PRJ_CD Is NOT Null;"
   return(odbcClose(conn))
 
 }
+
 
 update_FN125_tag_flag <- function(dbase){
   # stom_flag
